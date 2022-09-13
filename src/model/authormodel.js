@@ -1,16 +1,14 @@
-
 const mongoose = require('mongoose');
-const validator=require("validator")
-
+const validator = require("validator")
 
 
 const authorSchema = new mongoose.Schema({
     fname: {
         type: String,
         required: true,
-        trim:true,
-        validate(value){
-            if(!validator.isAlpha(value)) {
+        trim: true,
+        validate(value) {
+            if (!validator.isAlpha(value)) {
                 throw new Error("fname is invalid");
             }
         }
@@ -18,9 +16,9 @@ const authorSchema = new mongoose.Schema({
     lname: {
         type: String,
         required: true,
-        trim:true,
-        validate(value){
-            if(!validator.isAlpha(value)) {
+        trim: true,
+        validate(value) {
+            if (!validator.isAlpha(value)) {
                 throw new Error("lname is invalid");
             }
         }
@@ -28,15 +26,17 @@ const authorSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
+        trim: true,
         enum: ["Mr", "Mrs", "Miss"]
     },
     email: {
         type: String,
         unique: true,
         lowerCase: true,
+        trim: true,
         required: true,
-        validate(value){
-            if(!validator.isEmail(value)) {
+        validate(value) {
+            if (!validator.isEmail(value)) {
                 throw new Error("Email is invalid");
             }
         }
@@ -44,7 +44,8 @@ const authorSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-        minlength:[8, "Password should be atlest 8 digits"]
+        trim: true,
+        minlength: [8, "Password should be atlest 8 digits"]
 
     }
 }, { timestamps: true })

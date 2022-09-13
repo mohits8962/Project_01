@@ -13,6 +13,8 @@ router.post('/authors', authorController.createAuthor)
 
 router.post('/login', authorController.authorLogin)
 
+
+
 router.post('/blogs',m1authentication.authentication, blogsController.createBlog)  // handeler function 
 
 router.get('/getBlogs',m1authentication.authentication, blogsController.getAllBlogs)
