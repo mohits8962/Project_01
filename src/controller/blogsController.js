@@ -1,7 +1,6 @@
 const blogsModel = require("../model/blogsmodel");
 let authorModel = require("../model/authormodel");
-const { default: mongoose } = require("mongoose");
-const ObjectId = mongoose.Types.ObjectId
+const mongoose = require("mongoose");
 
 
 const isValid = function (value) {
@@ -35,47 +34,49 @@ const createBlog = async function (req, res) {
 
     // validations
     if (!isValid(title)) {
-      res.status(400).send({ status: false, msg: 'title is required' })
+      return res.status(400).send({ status: false, msg: 'title is required' })
     }
 
     if (!isValid(body)) {
-      res.status(400).send({ status: false, msg: 'body is required' })
+      return res.status(400).send({ status: false, msg: 'body is required' })
     }
 
     if (!isValid(authorId)) {
-      res.status(400).send({ status: false, msg: 'authorId is required' })
+      return res.status(400).send({ status: false, msg: 'authorId is required' })
     }
 
     if (!isValidObjectId(authorId)) {
-      res.status(400).send({ status: false, msg: `${authorId} is not a valid author Id` })
+      return res.status(400).send({ status: false, msg: `${authorId} is not a valid author Id` })
     }
 
     if (!isValid(category)) {
-      res.status(400).send({ status: false, msg: 'category is required' })
+      return res.status(400).send({ status: false, msg: 'category is required' })
     }
 
     if (!isValid(subcategory)) {
-      res.status(400).send({ status: false, msg: 'subcategory is required' })
+      return res.status(400).send({ status: false, msg: 'subcategory is required' })
     }
 
     ////////////////
 
     let condition = await authorModel.findById(requestBody.authorId);
+
     if (condition) {
       if (requestBody.isPublished == true) {
         requestBody.publishedAt = Date.now();
         let savedData = await blogsModel.create(requestBody);
-        res.status(201).send({ data: savedData });
+        return res.status(201).send({ data: savedData });
+
       } else if (requestBody.isPublished == false) {
         requestBody.publishedAt = null;
         let savedData = await blogsModel.create(requestBody);
-        res.status(201).send({ data: savedData });
+        return res.status(201).send({ data: savedData });
       }
     } else {
-      res.status(400).send({ status: false, msg: "authorId is not present" });
+      return res.status(400).send({ status: false, msg: "authorId is not present" });
     }
   } catch (err) {
-    res.status(500).send({ msg: "error", error: err.message });
+    return res.status(500).send({ msg: "error", error: err.message });
   }
 }
 
@@ -84,20 +85,45 @@ const createBlog = async function (req, res) {
 
 
 
-const getAllBlogs = async (req, res) => {
+const getAllBlogs = async function (req, res) {
   try {
-    let blogData = req.query;
-    let allBlogs = await blogsModel
-      .find({ $and: [{ isDeleted: false }, { isPublished: true }, blogData] })
-      .populate("authorId");
-    if (allBlogs.length === 0) {
-      return res.status(400).send({ status: false, msg: "either deleted or not published" });
+    let filters = req.query
+
+    if (Object.keys(filters).length === 0) {
+      let blogs = await blogsModel.find({ isDeleted: false, isPublished: true })
+      if (blogs.length == 0) res.status(404).send({ status: false, msg: "No result found" })
+      return res.status(200).send({ status: true, data: blogs })
+
+    } else {
+      filters.isDeleted = false
+      filters.isPublished = true
+      if (filters.tags) {
+        if (filters.tags.includes(",")) {
+          let tagArray = filters.tags.split(",").map(String).map(x => x.trim())
+          filters.tags = { $all: tagArray }
+        }
+      }
+
+      if (filters.subcategory) {
+        if (filters.subcategory.includes(",")) {
+          let subcatArray = filters.subcategory.split(",").map(String).map(x => x.trim())
+          filters.subcategory = { $all: subcatArray }
+        }
+      }
+
+      let filteredBlogs = await blogsModel.find(filters)
+      if (filteredBlogs.length === 0) {
+        return res.status(404).send({ status: false, msg: "No such data available" })
+      }
+      else {
+        return res.status(200).send({ status: true, data: filteredBlogs })
+      }
     }
-    return res.status(200).send({ status: true, msg: 'Blog fetch successfully', data: allBlogs });
-  } catch (err) {
-    return res.status(500).send({ staus: false, error: err.message });
   }
-};
+  catch (err) {
+    return res.status(500).send({ status: false, msg: err.message })
+  }
+}
 
 
 //============================================== Update Blogs =====================================================//
@@ -127,7 +153,7 @@ const updatedBlogsData = async function (req, res) {
         let b = check.subcategory.flat()
         let check2 = await blogsModel.findByIdAndUpdate(getId, { tags: a, subcategory: b }, { new: true })
 
-        res.status(200).send({ status: true, message: 'updated data successfully', data: check2 });
+        return res.status(200).send({ status: true, message: 'updated data successfully', data: check2 });
       } else {
         return res.status(404).send("File is not present or Deleted");
       }
@@ -150,23 +176,24 @@ const deletedByParams = async function (req, res) {
     if (!blogid) {
       return res.status(400).send({ msg: "blogId is not valid" });
     }
+
     let findBlockid = await blogsModel.findById(blogid);
     if (!findBlockid) {
       return res.status(404).send({ msg: " blog is not exits" });
     }
+
     if (findBlockid.isDeleted == false) {
       let finddata = await blogsModel.findOneAndUpdate(
         { _id: blogid },
         { $set: { isDeleted: true, deletedAt: Date.now() } },
         { new: true }
       );
-      res.status(200).send({ status: true, msg: 'data deleted successfully' });
+      return res.status(200).send({ status: true, msg: 'data deleted successfully' });
     } else {
-      res.status(404).send({ msg: "file is already deleted" });
+      return res.status(404).send({ msg: "file is already deleted" });
     }
   } catch (err) {
-    console.log(err.message);
-    res.status(500).send(err.message);
+    return res.status(500).send({ staus: false, error: err.message });
   }
 };
 
@@ -191,10 +218,10 @@ const deleteByQuery = async (req, res) => {
 
     if (deletedData.modifiedCount == 0) return res.status(404).send({ status: false, msg: "No Such BLog Or the blog already is Deleted" });
 
-    res.status(200).send({ status: true, msg: deletedData });
+    return res.status(200).send({ status: true, msg: deletedData });
 
   } catch (err) {
-    res.status(500).send({ status: false, error: err.message });
+    return res.status(500).send({ status: false, error: err.message });
   }
 };
 

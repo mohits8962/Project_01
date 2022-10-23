@@ -1,55 +1,29 @@
-const mongoose = require('mongoose');
-const validator = require("validator")
-
+const mongoose = require('mongoose')
 
 const authorSchema = new mongoose.Schema({
     fname: {
         type: String,
-        required: true,
-        trim: true,
-        validate(value) {
-            if (!validator.isAlpha(value)) {
-                throw new Error("fname is invalid");
-            }
-        }
+        required: true
     },
     lname: {
         type: String,
-        required: true,
-        trim: true,
-        validate(value) {
-            if (!validator.isAlpha(value)) {
-                throw new Error("lname is invalid");
-            }
-        }
+        required: true
     },
     title: {
         type: String,
         required: true,
-        trim: true,
-        enum: ["Mr", "Mrs", "Miss"]
+        enum: ["mr", "mrs", "miss"]
+        
     },
     email: {
         type: String,
-        unique: true,
-        lowerCase: true,
-        trim: true,
-        required: true,
-        validate(value) {
-            if (!validator.isEmail(value)) {
-                throw new Error("Email is invalid");
-            }
-        }
+        required: true
     },
     password: {
         type: String,
-        required: true,
-        trim: true,
-        minlength: [8, "Password should be atlest 8 digits"]
-
+        required: true
     }
-}, { timestamps: true })
 
+},{ timestamps: true });
 
-module.exports = mongoose.model('author', authorSchema)
-
+module.exports = mongoose.model("author", authorSchema);
